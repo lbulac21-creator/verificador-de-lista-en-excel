@@ -1,0 +1,778 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="theme-color" content="#0d1117">
+<link rel="manifest" href="manifest.json">
+<link rel="apple-touch-icon" href="icon-192.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Outfit:wght@300;400;600;700;900&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<title>VerifiCheck</title>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#0d1117;--bg2:#161b22;--bg3:#1c2230;
+  --border:rgba(255,255,255,.08);--border2:rgba(255,255,255,.14);
+  --text:#e6edf3;--muted:#7d8590;
+  --green:#2dff7e;--gdim:rgba(45,255,126,.12);
+  --red:#ff4d6d;--rdim:rgba(255,77,109,.12);
+  --blue:#58a6ff;--bdim:rgba(88,166,255,.12);
+  --amber:#f0b429;--adim:rgba(240,180,41,.12);
+  --mono:'DM Mono',monospace;--sans:'Outfit',sans-serif;
+  --r:12px;--rs:7px;
+}
+html{scroll-behavior:smooth}
+body{background:var(--bg);color:var(--text);font-family:var(--sans);min-height:100vh;line-height:1.6;overflow-x:hidden}
+::-webkit-scrollbar{width:5px}::-webkit-scrollbar-track{background:var(--bg2)}::-webkit-scrollbar-thumb{background:var(--border2);border-radius:10px}
+@keyframes fadeUp{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:none}}
+@keyframes spin{to{transform:rotate(360deg)}}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.45}}
+.fadein{animation:fadeUp .4s ease both}
+.wrap{max-width:980px;margin:0 auto;padding:0 20px 60px;position:relative;z-index:1}
+
+/* HEADER */
+header{position:sticky;top:0;z-index:100;background:rgba(13,17,23,.92);backdrop-filter:blur(20px);border-bottom:1px solid var(--border);padding:0 20px}
+.hrow{max-width:980px;margin:0 auto;display:flex;align-items:center;gap:12px;height:62px}
+.logo{font-size:20px;font-weight:900;letter-spacing:-.5px;color:var(--text);display:flex;align-items:center;gap:10px;text-decoration:none}
+.logo-ic{width:32px;height:32px;background:var(--green);border-radius:8px;display:grid;place-items:center;font-size:17px;box-shadow:0 0 16px rgba(45,255,126,.4)}
+.logo span{color:var(--green)}
+.badge{font-family:var(--mono);font-size:10px;background:var(--gdim);color:var(--green);border:1px solid rgba(45,255,126,.25);padding:3px 9px;border-radius:20px}
+.hstat{margin-left:auto;font-family:var(--mono);font-size:11px;color:var(--muted);display:flex;align-items:center;gap:6px}
+.dot{width:7px;height:7px;border-radius:50%;background:var(--green);box-shadow:0 0 8px var(--green);animation:pulse 2s ease-in-out infinite}
+
+/* HERO */
+.hero{padding:48px 0 32px;text-align:center}
+.ey{font-family:var(--mono);font-size:11px;color:var(--green);letter-spacing:3px;text-transform:uppercase;margin-bottom:14px;display:flex;align-items:center;justify-content:center;gap:8px}
+.ey::before,.ey::after{content:'';width:28px;height:1px;background:linear-gradient(90deg,transparent,var(--green))}
+.ey::after{transform:scaleX(-1)}
+h1{font-size:clamp(30px,5vw,58px);font-weight:900;letter-spacing:-2px;line-height:1;margin-bottom:12px;background:linear-gradient(135deg,#fff,#7d8590);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+h1 .ac{background:linear-gradient(135deg,var(--green),#00c9ff);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+.sub{font-size:15px;color:var(--muted);max-width:480px;margin:0 auto 24px;font-weight:300}
+.pills{display:flex;flex-wrap:wrap;justify-content:center;gap:8px}
+.pill{font-family:var(--mono);font-size:11px;padding:5px 13px;border-radius:20px;border:1px solid var(--border2);color:var(--muted);background:var(--bg2)}
+
+/* CARD */
+.card{background:var(--bg2);border:1px solid var(--border);border-radius:var(--r);padding:26px;position:relative;overflow:hidden;margin-top:18px}
+.cacc{position:absolute;top:0;left:0;right:0;height:2px}
+.clb{font-family:var(--mono);font-size:10px;font-weight:500;letter-spacing:2px;text-transform:uppercase;color:var(--muted);margin-bottom:16px;display:flex;align-items:center;gap:8px}
+.ld{width:6px;height:6px;border-radius:50%;flex-shrink:0}
+
+/* UPLOAD */
+.upz{border:2px dashed var(--border2);border-radius:var(--rs);padding:32px 20px;text-align:center;cursor:pointer;transition:all .2s;position:relative}
+.upz:hover{border-color:var(--green);background:var(--gdim)}
+.upz input{position:absolute;inset:0;opacity:0;width:100%;height:100%;cursor:pointer}
+.upi{font-size:38px;display:block;margin-bottom:10px}
+.upt{font-family:var(--mono);font-size:12px;color:var(--muted);line-height:1.7}
+.upt strong{color:var(--green)}
+
+/* SHEET SELECTOR */
+.sheet-sel{display:none;margin-top:14px}
+.sheet-sel.show{display:block}
+.sheet-info{font-family:var(--mono);font-size:12px;padding:10px 14px;border-radius:var(--rs);background:var(--bdim);border:1px solid rgba(88,166,255,.25);color:var(--blue);margin-bottom:10px;line-height:1.6}
+.sheet-btns{display:flex;flex-wrap:wrap;gap:8px}
+.sbtn{font-family:var(--mono);font-size:12px;padding:8px 16px;border-radius:var(--rs);border:1px solid var(--border2);background:var(--bg3);color:var(--text);cursor:pointer;transition:all .2s;display:flex;align-items:center;gap:6px}
+.sbtn:hover{border-color:var(--blue);color:var(--blue);background:var(--bdim)}
+.sbtn.activo{border-color:var(--green);color:var(--green);background:var(--gdim);font-weight:700}
+
+/* COL CONFIG */
+.colcfg{display:none;margin-top:14px;gap:12px;flex-wrap:wrap}
+.colcfg.show{display:flex}
+.cg{flex:1;min-width:140px}
+.cg label{font-family:var(--mono);font-size:10px;color:var(--muted);letter-spacing:1px;display:block;margin-bottom:6px}
+select{width:100%;background:var(--bg3);border:1px solid var(--border2);color:var(--text);font-family:var(--mono);font-size:12px;padding:9px 12px;border-radius:var(--rs);outline:none;cursor:pointer;appearance:none}
+select:focus{border-color:var(--blue)}
+
+/* BUTTONS */
+.btnrow{display:flex;gap:10px;margin-top:14px;flex-wrap:wrap}
+.btn{font-family:var(--mono);font-size:12px;font-weight:500;letter-spacing:.5px;padding:10px 20px;border-radius:var(--rs);border:none;cursor:pointer;transition:all .15s;display:inline-flex;align-items:center;gap:7px;white-space:nowrap}
+.btn:disabled{opacity:.35;cursor:not-allowed;pointer-events:none}
+.btn-g{background:var(--green);color:#0d1117;font-weight:700}
+.btn-g:hover{box-shadow:0 0 20px rgba(45,255,126,.4);transform:translateY(-1px)}
+.btn-r{background:var(--red);color:#fff;font-weight:700}
+.btn-r:hover{box-shadow:0 0 20px rgba(255,77,109,.4);transform:translateY(-1px)}
+.btn-a{background:var(--amber);color:#0d1117;font-weight:700}
+.btn-a:hover{box-shadow:0 0 20px rgba(240,180,41,.4);transform:translateY(-1px)}
+.btn-gh{background:transparent;border:1px solid var(--border2);color:var(--muted)}
+.btn-gh:hover{border-color:var(--text);color:var(--text)}
+
+/* ALERTS */
+.alr{font-family:var(--mono);font-size:12px;padding:11px 14px;border-radius:var(--rs);margin-top:12px;line-height:1.6}
+.alr-g{background:var(--gdim);border:1px solid rgba(45,255,126,.25);color:var(--green)}
+.alr-r{background:var(--rdim);border:1px solid rgba(255,77,109,.25);color:var(--red)}
+.alr-b{background:var(--bdim);border:1px solid rgba(88,166,255,.25);color:var(--blue)}
+.alr-a{background:var(--adim);border:1px solid rgba(240,180,41,.25);color:var(--amber)}
+
+/* RESULTS */
+.res-panel{display:none;margin-top:18px;background:var(--bg2);border:1px solid var(--border);border-radius:var(--r);overflow:hidden}
+.res-panel.show{display:block;animation:fadeUp .4s ease}
+.rhead{padding:16px 22px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.rtit{font-size:15px;font-weight:700}
+
+/* STATS */
+.sgrid{display:grid;grid-template-columns:repeat(4,1fr);border-bottom:1px solid var(--border)}
+@media(max-width:600px){.sgrid{grid-template-columns:repeat(2,1fr)}}
+.sc{padding:16px 18px;border-right:1px solid var(--border);position:relative}
+.sc:last-child{border-right:none}
+.sico{font-size:15px;margin-bottom:4px}
+.snum{font-family:var(--mono);font-size:30px;font-weight:500;line-height:1;margin-bottom:3px}
+.slb{font-family:var(--mono);font-size:9px;color:var(--muted);letter-spacing:1px;text-transform:uppercase}
+.sbar{position:absolute;bottom:0;left:0;right:0;height:2px;opacity:.5}
+
+/* DOWNLOAD BANNER */
+.dlb{margin:14px 22px;padding:14px 18px;background:linear-gradient(135deg,rgba(255,77,109,.08),rgba(240,180,41,.08));border:1px solid rgba(255,77,109,.2);border-radius:var(--rs);display:flex;align-items:center;gap:14px;flex-wrap:wrap}
+.dlt{font-weight:700;font-size:14px;color:var(--red);margin-bottom:3px}
+.dls{font-family:var(--mono);font-size:11px;color:var(--muted)}
+.dlbtns{display:flex;gap:8px;flex-wrap:wrap}
+
+/* FILTERS */
+.fbar{display:flex;align-items:center;gap:8px;padding:12px 22px;border-bottom:1px solid var(--border);flex-wrap:wrap}
+.fb{font-family:var(--mono);font-size:11px;padding:6px 14px;border-radius:20px;border:1px solid var(--border2);background:transparent;color:var(--muted);cursor:pointer;transition:all .15s}
+.fb:hover{border-color:var(--text);color:var(--text)}
+.fb.fall{border-color:var(--blue);color:var(--blue);background:var(--bdim)}
+.fb.fced{border-color:var(--red);color:var(--red);background:var(--rdim)}
+.fb.fnom{border-color:var(--amber);color:var(--amber);background:var(--adim)}
+.fb.fok{border-color:var(--green);color:var(--green);background:var(--gdim)}
+.srch{margin-left:auto;background:var(--bg3);border:1px solid var(--border2);border-radius:var(--rs);color:var(--text);font-family:var(--mono);font-size:12px;padding:7px 12px;outline:none;min-width:180px}
+.srch:focus{border-color:var(--blue)}
+.srch::placeholder{color:var(--muted)}
+
+/* TABLE */
+.twrap{max-height:440px;overflow-y:auto}
+table{width:100%;border-collapse:collapse;font-family:var(--mono);font-size:12px}
+thead tr{background:var(--bg2);position:sticky;top:0;z-index:3}
+th{padding:10px 14px;text-align:left;color:var(--muted);font-size:10px;letter-spacing:1px;text-transform:uppercase;border-bottom:1px solid var(--border);white-space:nowrap}
+td{padding:10px 14px;border-bottom:1px solid rgba(255,255,255,.04)}
+tr:last-child td{border-bottom:none}
+tr:hover td{background:rgba(255,255,255,.02)}
+.rdc{background:rgba(255,77,109,.07)!important}
+.rdn{background:rgba(240,180,41,.07)!important}
+.rdb{background:rgba(255,77,109,.13)!important}
+.tag{font-family:var(--mono);font-size:10px;font-weight:500;padding:3px 9px;border-radius:20px;display:inline-block;margin-right:3px}
+.tr{background:var(--rdim);border:1px solid rgba(255,77,109,.3);color:var(--red)}
+.ta{background:var(--adim);border:1px solid rgba(240,180,41,.3);color:var(--amber)}
+.tg{background:var(--gdim);border:1px solid rgba(45,255,126,.3);color:var(--green)}
+.rfoot{padding:10px 22px;border-top:1px solid var(--border);font-family:var(--mono);font-size:11px;color:var(--muted);display:flex;justify-content:space-between;flex-wrap:wrap;gap:6px}
+
+.empty{text-align:center;padding:48px;color:var(--muted);font-family:var(--mono);font-size:13px}
+footer{border-top:1px solid var(--border);padding:18px;text-align:center;font-family:var(--mono);font-size:11px;color:var(--muted);margin-top:40px}
+footer a{color:var(--green);text-decoration:none}
+@media(max-width:500px){.card{padding:16px}.rhead,.fbar{padding:12px 14px}.dlb{margin:10px 14px}}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="hrow">
+    <a href="#" class="logo"><div class="logo-ic">&#10003;</div>Verifi<span>Check</span></a>
+    <div class="badge">v4.0</div>
+    <div class="hstat"><div class="dot"></div><span id="st">Listo</span></div>
+  </div>
+</header>
+
+<div class="wrap">
+
+  <section class="hero fadein">
+    <div class="ey">Sistema de Verificacion</div>
+    <h1>Detecta y elimina<br><span class="ac">duplicados al instante</span></h1>
+    <p class="sub">Carga tu Excel, selecciona la hoja, detecta duplicados y descarga el Word corregido.</p>
+    <div class="pills">
+      <div class="pill">&#128202; Lee Excel / CSV</div>
+      <div class="pill">&#128196; Selecciona la hoja</div>
+      <div class="pill">&#128308; Cedulas duplicadas</div>
+      <div class="pill">&#129000; Nombres repetidos</div>
+      <div class="pill">&#11015; Descarga Word limpio</div>
+    </div>
+  </section>
+
+  <!-- CARGAR EXCEL -->
+  <div class="card fadein">
+    <div class="cacc" style="background:linear-gradient(90deg,var(--green),#00c9ff)"></div>
+    <div class="clb"><div class="ld" style="background:var(--green);box-shadow:0 0 6px var(--green)"></div>Cargar Archivo Excel</div>
+
+    <div class="upz" id="upz"
+      ondragover="event.preventDefault();this.style.borderColor='var(--green)'"
+      ondragleave="this.style.borderColor=''"
+      ondrop="onDrop(event)">
+      <input type="file" id="fi" accept=".xlsx,.xls,.csv" onchange="onFile(this.files[0])">
+      <span class="upi">&#128202;</span>
+      <div class="upt"><strong>Click o arrastra</strong> tu archivo aqui<br>
+      <span style="font-size:11px;opacity:.7;display:block;margin-top:3px">.xlsx &middot; .xls &middot; .csv</span></div>
+    </div>
+
+    <div id="alr-excel"></div>
+
+    <!-- SELECTOR DE HOJAS -->
+    <div class="sheet-sel" id="sheet-sel">
+      <div class="sheet-info" id="sheet-info"></div>
+      <div class="sheet-btns" id="sheet-btns"></div>
+      <div id="btn-todas-wrap" style="display:none;margin-top:12px;padding-top:12px;border-top:1px solid var(--border)">
+        <button class="btn btn-g" onclick="eliminar('all')" style="width:100%;justify-content:center;font-size:13px;padding:12px 20px">
+          &#11015; Eliminar duplicados de TODAS las hojas y descargar un solo Word
+        </button>
+      </div>
+    </div>
+
+    <!-- COLUMNAS -->
+    <div class="colcfg" id="colcfg">
+      <div class="cg"><label>Columna Cedula / ID</label><select id="sel-c" onchange="verificar()"></select></div>
+      <div class="cg"><label>Columna Nombre</label><select id="sel-n" onchange="verificar()"></select></div>
+    </div>
+
+    <div class="btnrow">
+      <button class="btn btn-g" id="btn-ver" disabled onclick="verificar()">&#128269; Verificar duplicados</button>
+      <button class="btn btn-gh" onclick="limpiarTodo()">&#10005; Limpiar</button>
+    </div>
+  </div>
+
+  <!-- RESULTADOS -->
+  <div class="res-panel" id="res-panel">
+
+    <div class="rhead">
+      <div class="rtit">&#128203; Resultados</div>
+    </div>
+
+    <!-- STATS -->
+    <div class="sgrid">
+      <div class="sc"><div class="sico">&#128203;</div><div class="snum" id="s-tot" style="color:var(--blue)">0</div><div class="slb">Total</div><div class="sbar" style="background:var(--blue)"></div></div>
+      <div class="sc"><div class="sico">&#128308;</div><div class="snum" id="s-ced" style="color:var(--red)">0</div><div class="slb">Ced. Dup.</div><div class="sbar" style="background:var(--red)"></div></div>
+      <div class="sc"><div class="sico">&#129000;</div><div class="snum" id="s-nom" style="color:var(--amber)">0</div><div class="slb">Nom. Rep.</div><div class="sbar" style="background:var(--amber)"></div></div>
+      <div class="sc"><div class="sico">&#9989;</div><div class="snum" id="s-ok" style="color:var(--green)">0</div><div class="slb">Limpios</div><div class="sbar" style="background:var(--green)"></div></div>
+    </div>
+
+    <!-- BOTONES DE DESCARGA SIEMPRE VISIBLES -->
+    <div style="margin:14px 22px;padding:16px 20px;background:var(--bg3);border:1px solid var(--border2);border-radius:var(--rs);display:flex;align-items:center;gap:12px;flex-wrap:wrap">
+      <div style="flex:1">
+        <div style="font-weight:700;font-size:13px;margin-bottom:4px">&#11015; Descargar Word</div>
+        <div id="dld" style="font-family:var(--mono);font-size:11px;color:var(--muted)">Elige que duplicados eliminar antes de descargar</div>
+      </div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap">
+        <button class="btn btn-gh" onclick="descargarWord(null,'lista_completa',0)" style="font-size:11px">&#128196; Lista completa</button>
+        <button class="btn btn-r" id="btn-ced" onclick="eliminar('ced')" disabled>&#128465; Sin Ced. Dup.</button>
+        <button class="btn btn-a" id="btn-nom" onclick="eliminar('nom')" disabled>&#128465; Sin Nom. Rep.</button>
+        <button class="btn btn-g" id="btn-all" onclick="eliminar('all')" disabled>&#10003; Sin TODOS &rarr; Word</button>
+      </div>
+    </div>
+
+    <!-- BANNER LIMPIO -->
+    <div id="bnr-ok" style="display:none;margin:0 22px 14px"></div>
+
+    <!-- FILTROS -->
+    <div class="fbar">
+      <button class="fb fall" id="fb-all" onclick="filtrar('all')">Todos</button>
+      <button class="fb" id="fb-ced" onclick="filtrar('ced')">&#9888; Ced. Dup.</button>
+      <button class="fb" id="fb-nom" onclick="filtrar('nom')">&#9888; Nom. Rep.</button>
+      <button class="fb" id="fb-ok"  onclick="filtrar('ok')">&#10003; Limpios</button>
+      <input class="srch" type="text" id="srch" placeholder="Buscar..." oninput="filtrar(filtroActual)">
+    </div>
+
+    <!-- TABLA -->
+    <div class="twrap">
+      <table><thead><tr><th>Fila</th><th>Nombre</th><th>Cedula</th><th>Estado</th></tr></thead>
+      <tbody id="tbody"></tbody></table>
+    </div>
+    <div class="rfoot"><span id="rc">0 registros</span><span id="rp" style="color:var(--red)"></span></div>
+  </div>
+
+</div>
+
+
+
+<script>
+// ════════════════════════════════════════
+// ESTADO
+// ════════════════════════════════════════
+var datos = [];        // filas de la hoja activa
+var cols = [];         // columnas
+var procesado = [];    // con _dupCed, _dupNom
+var wb = null;         // workbook actual
+var filtroActual = 'all';
+var nombreArchivo = 'lista';
+var hojaActual = '';   // nombre hoja seleccionada
+var totalLibro = 0;    // total registros todo el libro
+
+// ════════════════════════════════════════
+// UTILS
+// ════════════════════════════════════════
+function G(id) { return document.getElementById(id); }
+
+function norm(s) {
+  return String(s || '').toLowerCase()
+    .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+    .replace(/\s+/g, ' ').trim();
+}
+
+function esc(s) {
+  return String(s || '')
+    .replace(/&/g,'&amp;').replace(/</g,'&lt;')
+    .replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+function estado(t) { G('st').textContent = t; }
+
+function alerta(id, tipo, msg) {
+  G(id).innerHTML = msg
+    ? '<div class="alr alr-' + tipo + '">' + msg + '</div>'
+    : '';
+}
+
+// ════════════════════════════════════════
+// CARGA DE ARCHIVO
+// ════════════════════════════════════════
+function onDrop(e) {
+  e.preventDefault();
+  G('upz').style.borderColor = '';
+  onFile(e.dataTransfer.files[0]);
+}
+
+function onFile(file) {
+  if (!file) return;
+  nombreArchivo = file.name.replace(/\.[^.]+$/, '');
+  alerta('alr-excel', 'b', 'Cargando <strong>' + esc(file.name) + '</strong>...');
+  estado('Leyendo...');
+
+  var reader = new FileReader();
+  reader.onload = function(ev) {
+    try {
+      wb = XLSX.read(ev.target.result, { type: 'binary' });
+      if (wb.SheetNames.length === 1) {
+        G('sheet-sel').classList.remove('show');
+        cargarHoja(wb.SheetNames[0], file.name);
+      } else {
+        mostrarHojas(file.name);
+      }
+    } catch(err) {
+      alerta('alr-excel', 'r', 'Error al leer el archivo: ' + err.message);
+      estado('Error');
+    }
+  };
+  reader.readAsBinaryString(file);
+}
+
+// ════════════════════════════════════════
+// SELECTOR DE HOJAS
+// ════════════════════════════════════════
+function filasSinVacias(ws) {
+  var filas = XLSX.utils.sheet_to_json(ws, { defval: '', raw: false });
+  return filas.filter(function(r) {
+    return Object.values(r).some(function(v) {
+      return String(v).trim() !== '';
+    });
+  });
+}
+
+function mostrarHojas(fileName) {
+  var totalLibro = 0;
+  var conteos = {};
+
+  wb.SheetNames.forEach(function(name) {
+    var n = filasSinVacias(wb.Sheets[name]).length;
+    conteos[name] = n;
+    totalLibro += n;
+  });
+  window._totalLibro = totalLibro;
+
+  G('sheet-info').innerHTML =
+    '&#128196; <strong>' + esc(fileName) + '</strong> &nbsp;&middot;&nbsp; ' +
+    '<strong>' + wb.SheetNames.length + ' hojas</strong> &nbsp;&middot;&nbsp; ' +
+    '<strong style="color:var(--green)">' + totalLibro + ' registros en total en el libro</strong><br>' +
+    '<span style="font-size:11px;opacity:.8">Selecciona la hoja que quieres verificar:</span>';
+
+  var html = '';
+  wb.SheetNames.forEach(function(name, i) {
+    html += '<button class="sbtn" id="sbtn' + i + '" data-sheet="' + esc(name) + '" onclick="elegirHoja(this)">' +
+            '&#128196; ' + esc(name) +
+            ' <span style="font-size:10px;color:var(--muted)">(' + conteos[name] + ' filas)</span>' +
+            '</button>';
+  });
+
+  G('sheet-btns').innerHTML = html;
+  G('sheet-sel').classList.add('show');
+  G('btn-todas-wrap').style.display = 'block';
+  alerta('alr-excel', 'b',
+    '&#128196; <strong>' + esc(fileName) + '</strong> &middot; ' +
+    '<strong>' + wb.SheetNames.length + ' hojas</strong> &middot; ' +
+    'Total libro: <strong>' + totalLibro + ' registros</strong> &mdash; Selecciona una hoja.'
+  );
+  estado('Elige una hoja');
+}
+
+function elegirHoja(btn) {
+  var sheetName = btn.getAttribute('data-sheet');
+  // Marcar activo
+  var todos = G('sheet-btns').querySelectorAll('.sbtn');
+  todos.forEach(function(b) { b.classList.remove('activo'); });
+  btn.classList.add('activo');
+  cargarHoja(sheetName, null);
+}
+
+function cargarHoja(sheetName, fileName) {
+  var ws = wb.Sheets[sheetName];
+  var filas = filasSinVacias(ws);
+
+  if (!filas.length) {
+    alerta('alr-excel', 'a', 'La hoja <strong>' + esc(sheetName) + '</strong> no tiene datos.');
+    return;
+  }
+
+  // Quitar columnas completamente vacias
+  var todasCols = Object.keys(filas[0]);
+  var colsConDatos = todasCols.filter(function(col) {
+    return filas.some(function(r) { return String(r[col] || '').trim() !== ''; });
+  });
+
+  datos = filas.map(function(r) {
+    var obj = {};
+    colsConDatos.forEach(function(c) { obj[c] = r[c]; });
+    return obj;
+  });
+
+  cols = colsConDatos;
+  hojaActual = sheetName;
+  configurarSelectores(cols);
+  G('btn-ver').disabled = false;
+  verificar();
+
+  var msg = fileName
+    ? '&#10003; <strong>' + esc(fileName) + '</strong> &middot; ' + datos.length + ' registros'
+    : '&#10003; Hoja <strong>' + esc(sheetName) + '</strong> &middot; ' + datos.length + ' registros cargados';
+  alerta('alr-excel', 'g', msg);
+  estado(datos.length + ' registros');
+}
+
+// ════════════════════════════════════════
+// CONFIGURAR SELECTORES
+// ════════════════════════════════════════
+function configurarSelectores(c) {
+  var cedKw = ['cedula','cc','dni','id','documento','ced','identificacion'];
+  var nomKw = ['nombre','name','apellido','persona','completo'];
+  var cedCol = c.find(function(x) { return cedKw.some(function(k) { return x.toLowerCase().includes(k); }); }) || c[0] || '';
+  var nomCol = c.find(function(x) { return nomKw.some(function(k) { return x.toLowerCase().includes(k); }); }) || c[1] || c[0] || '';
+  var opts = c.map(function(x) { return '<option value="' + esc(x) + '">' + esc(x) + '</option>'; }).join('');
+  G('sel-c').innerHTML = opts;
+  G('sel-n').innerHTML = opts;
+  G('sel-c').value = cedCol;
+  G('sel-n').value = nomCol;
+  G('colcfg').classList.add('show');
+}
+
+// ════════════════════════════════════════
+// DETECTAR DUPLICADOS
+// ════════════════════════════════════════
+function detectar(filas, cc, nc) {
+  var cCount = {}, nCount = {};
+  filas.forEach(function(r) {
+    var c = String(r[cc] || '').trim();
+    var n = norm(r[nc]);
+    if (c) cCount[c] = (cCount[c] || 0) + 1;
+    if (n) nCount[n] = (nCount[n] || 0) + 1;
+  });
+  return filas.map(function(r, i) {
+    var c = String(r[cc] || '').trim();
+    var n = norm(r[nc]);
+    var obj = {};
+    Object.keys(r).forEach(function(k) { obj[k] = r[k]; });
+    obj._fila = i + 2;
+    obj._dc = !!(c && cCount[c] > 1);
+    obj._dn = !!(n && nCount[n] > 1);
+    return obj;
+  });
+}
+
+// ════════════════════════════════════════
+// VERIFICAR
+// ════════════════════════════════════════
+function verificar() {
+  if (!datos.length) return;
+  var cc = G('sel-c').value;
+  var nc = G('sel-n').value;
+  procesado = detectar(datos, cc, nc);
+
+  var tot = procesado.length;
+  var ced = procesado.filter(function(r) { return r._dc; }).length;
+  var nom = procesado.filter(function(r) { return r._dn; }).length;
+  var ok  = procesado.filter(function(r) { return !r._dc && !r._dn; }).length;
+
+  G('s-tot').textContent = tot;
+  G('s-ced').textContent = ced;
+  G('s-nom').textContent = nom;
+  G('s-ok').textContent  = ok;
+
+  // Activar botones segun duplicados encontrados
+  G('btn-ced').disabled = (ced === 0);
+  G('btn-nom').disabled = (nom === 0);
+  G('btn-all').disabled = (ced === 0 && nom === 0);
+
+  if (ced > 0 || nom > 0) {
+    G('dld').innerHTML = '<span style="color:var(--red)">' + ced + ' cedula(s) duplicada(s)</span> &nbsp;&middot;&nbsp; <span style="color:var(--amber)">' + nom + ' nombre(s) repetido(s)</span>';
+    G('bnr-ok').style.display = 'none';
+  } else {
+    G('dld').innerHTML = '<span style="color:var(--green)">&#9989; Lista limpia, sin duplicados</span>';
+    G('bnr-ok').style.display = 'none';
+  }
+  filtroActual = 'all';
+  activarFiltro('all');
+  renderTabla(procesado);
+  G('res-panel').classList.add('show');
+  estado(tot + ' registros \u00b7 ' + (ced + nom) + ' problemas');
+}
+
+// ════════════════════════════════════════
+// ELIMINAR Y DESCARGAR WORD
+// ════════════════════════════════════════
+function eliminar(tipo) {
+  var cc = G('sel-c').value;
+  var nc = G('sel-n').value;
+  // Si hay varias hojas, procesar TODAS y combinar en un Word
+  if (wb && wb.SheetNames.length > 1) {
+    eliminarTodasHojas(tipo, cc, nc);
+  } else {
+    eliminarUnaHoja(tipo, cc, nc, datos, nombreArchivo);
+  }
+}
+
+function eliminarUnaHoja(tipo, cc, nc, filas, nombre) {
+  var vCed = {}, vNom = {}, eliminados = 0;
+  var limpios = filas.filter(function(r) {
+    var c = String(r[cc] || '').trim();
+    var n = norm(r[nc]);
+    var quitar = false;
+    if (tipo === 'ced' || tipo === 'all') { if (c && vCed[c]) quitar = true; if (c) vCed[c] = true; }
+    if (tipo === 'nom' || tipo === 'all') { if (n && vNom[n]) quitar = true; if (n) vNom[n] = true; }
+    if (quitar) eliminados++;
+    return !quitar;
+  });
+  var etiq = tipo === 'ced' ? 'sin_ced_dup' : tipo === 'nom' ? 'sin_nom_rep' : 'sin_duplicados';
+  descargarWord(limpios, nombre + '_' + etiq, eliminados, null);
+}
+
+function eliminarTodasHojas(tipo, cc, nc) {
+  // Procesar CADA hoja por separado y juntar todo en un Word
+  var seccionesPorHoja = [];
+  var totalElim = 0;
+  var totalLimpio = 0;
+  var totalOrig = 0;
+
+  wb.SheetNames.forEach(function(sheetName) {
+    var ws = wb.Sheets[sheetName];
+    var filas = filasSinVacias(ws);
+    if (!filas.length) return;
+
+    // Columnas de esta hoja
+    var todasCols = Object.keys(filas[0]);
+    var colsHoja = todasCols.filter(function(col) {
+      return filas.some(function(r) { return String(r[col]||'').trim() !== ''; });
+    });
+    filas = filas.map(function(r) {
+      var obj={}; colsHoja.forEach(function(c){ obj[c]=r[c]; }); return obj;
+    });
+
+    var vCed={}, vNom={}, elim=0;
+    var limpios = filas.filter(function(r) {
+      var c = String(r[cc]||'').trim();
+      var n = norm(r[nc]||'');
+      var quitar = false;
+      if (tipo==='ced'||tipo==='all'){ if(c&&vCed[c]) quitar=true; if(c) vCed[c]=true; }
+      if (tipo==='nom'||tipo==='all'){ if(n&&vNom[n]) quitar=true; if(n) vNom[n]=true; }
+      if (quitar) elim++;
+      return !quitar;
+    });
+
+    totalOrig += filas.length;
+    totalElim += elim;
+    totalLimpio += limpios.length;
+    seccionesPorHoja.push({ nombre: sheetName, cols: colsHoja, filas: limpios, orig: filas.length, elim: elim });
+  });
+
+  var etiq = tipo==='ced'?'sin_ced_dup':tipo==='nom'?'sin_nom_rep':'sin_duplicados';
+  descargarWordMultiHoja(seccionesPorHoja, nombreArchivo+'_'+etiq, totalOrig, totalElim, totalLimpio);
+}
+
+function descargarWord(filas, nombre, eliminados) {
+  var datos2 = filas || datos;
+  var fecha = new Date().toLocaleDateString('es-CO', { year:'numeric', month:'long', day:'numeric' });
+  var elim = eliminados || 0;
+
+  var cabecera = '<tr style="background:#1a7f4b;">' +
+    cols.map(function(c) {
+      return '<th style="border:1px solid #145c36;padding:8px 10px;color:#fff;font-size:11pt;font-weight:bold;text-align:left;">' + esc(c) + '</th>';
+    }).join('') + '</tr>';
+
+  var filasTR = datos2.map(function(r, i) {
+    var celdas = cols.map(function(c) {
+      return '<td style="border:1px solid #d1d5db;padding:6px 10px;font-size:11pt;">' + esc(String(r[c] || '')) + '</td>';
+    }).join('');
+    return '<tr style="background:' + (i % 2 === 0 ? '#ffffff' : '#f9fafb') + '">' + celdas + '</tr>';
+  }).join('');
+
+  var html = '<!DOCTYPE html><html><head><meta charset="UTF-8">' +
+    '<style>body{font-family:Calibri,sans-serif;margin:40px}h1{color:#1a7f4b;font-size:18pt}hr{border:none;border-top:2px solid #1a7f4b;margin:14px 0}td,th{font-size:11pt}</style>' +
+    '</head><body>' +
+    '<h1>&#10003; VerifiCheck &mdash; Lista Verificada</h1>' +
+    '<p style="color:#6b7280;font-size:10pt;margin-top:-6px">Generado el ' + fecha + '</p><hr>' +
+    '<table style="border-collapse:collapse;margin-bottom:16px;font-size:10pt">' +
+    '<tr><td style="padding:3px 20px 3px 0;color:#6b7280">Total original:</td><td style="font-weight:bold">' + datos.length + ' registros</td></tr>' +
+    '<tr><td style="padding:3px 20px 3px 0;color:#6b7280">Eliminados:</td><td style="font-weight:bold;color:#dc2626">' + elim + ' duplicados</td></tr>' +
+    '<tr><td style="padding:3px 20px 3px 0;color:#6b7280">Lista limpia:</td><td style="font-weight:bold;color:#1a7f4b">' + datos2.length + ' registros</td></tr>' +
+    '</table>' +
+    '<table style="border-collapse:collapse;width:100%">' + cabecera + filasTR + '</table>' +
+    '<p style="color:#9ca3af;font-size:9pt;margin-top:20px">Documento generado por VerifiCheck</p>' +
+    '</body></html>';
+
+  var blob = new Blob(['\ufeff' + html], { type: 'application/msword' });
+  var url = URL.createObjectURL(blob);
+  var a = document.createElement('a');
+  a.href = url;
+  a.download = (nombre || 'lista') + '.doc';
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+
+  alerta('alr-excel', 'g',
+    '&#9989; Se eliminaron <strong>' + elim + '</strong> fila(s). ' +
+    'Word descargado con <strong>' + datos2.length + '</strong> registros limpios.'
+  );
+  estado('Word descargado \u00b7 ' + datos2.length + ' registros');
+}
+
+// ════════════════════════════════════════
+// FILTRAR Y TABLA
+// ════════════════════════════════════════
+function filtrar(tipo) {
+  filtroActual = tipo;
+  activarFiltro(tipo);
+  var s = norm(G('srch').value);
+  var cc = G('sel-c').value;
+  var nc = G('sel-n').value;
+  var lista = procesado;
+  if (tipo === 'ced') lista = lista.filter(function(r) { return r._dc; });
+  else if (tipo === 'nom') lista = lista.filter(function(r) { return r._dn; });
+  else if (tipo === 'ok')  lista = lista.filter(function(r) { return !r._dc && !r._dn; });
+  if (s) lista = lista.filter(function(r) {
+    return norm(r[nc]).includes(s) || String(r[cc] || '').toLowerCase().includes(s);
+  });
+  renderTabla(lista);
+}
+
+function activarFiltro(t) {
+  ['all','ced','nom','ok'].forEach(function(x) {
+    G('fb-' + x).className = 'fb' + (x === t ? ' f' + x : '');
+  });
+}
+
+function renderTabla(lista) {
+  var cc = G('sel-c').value;
+  var nc = G('sel-n').value;
+  var tb = G('tbody');
+
+  if (!lista.length) {
+    tb.innerHTML = '<tr><td colspan="4"><div class="empty">&#128269; Sin registros para este filtro</div></td></tr>';
+    G('rc').textContent = '0 registros';
+    G('rp').textContent = '';
+    return;
+  }
+
+  tb.innerHTML = lista.map(function(r) {
+    var cls = (r._dc && r._dn) ? 'rdb' : r._dc ? 'rdc' : r._dn ? 'rdn' : '';
+    var tags = (r._dc ? '<span class="tag tr">&#9888; CED DUP</span>' : '') +
+               (r._dn ? '<span class="tag ta">&#9888; NOM REP</span>' : '') +
+               (!r._dc && !r._dn ? '<span class="tag tg">&#10003; OK</span>' : '');
+    var nombre = esc(String(r[nc] || ''));
+    var cedula = esc(String(r[cc] || ''));
+    return '<tr class="' + cls + '">' +
+      '<td style="color:var(--muted);font-size:11px">&#11035; ' + r._fila + '</td>' +
+      '<td style="' + (r._dn ? 'color:var(--amber);font-weight:600' : '') + ';max-width:220px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="' + nombre + '">' + (nombre || '<span style="color:var(--muted)">&#8212;</span>') + '</td>' +
+      '<td style="' + (r._dc ? 'color:var(--red);font-weight:600' : 'font-family:var(--mono)') + '">' + (cedula || '<span style="color:var(--muted)">&#8212;</span>') + '</td>' +
+      '<td>' + tags + '</td></tr>';
+  }).join('');
+
+  var probs = lista.filter(function(r) { return r._dc || r._dn; }).length;
+  G('rc').textContent = lista.length + ' registros';
+  G('rp').textContent = probs > 0 ? '&#9888; ' + probs + ' con problemas' : '';
+}
+
+// ════════════════════════════════════════
+// WORD MULTI-HOJA
+// ════════════════════════════════════════
+function descargarWordMultiHoja(secciones, nombre, totalOrig, totalElim, totalLimpio) {
+  var fecha = new Date().toLocaleDateString('es-CO', { year:'numeric', month:'long', day:'numeric' });
+
+  var seccionesHTML = secciones.map(function(sec) {
+    var cabecera = '<tr style="background:#1a7f4b;">' +
+      sec.cols.map(function(c) {
+        return '<th style="border:1px solid #145c36;padding:8px 10px;color:#fff;font-size:11pt;font-weight:bold;text-align:left;">' + esc(c) + '</th>';
+      }).join('') + '</tr>';
+
+    var filasTR = sec.filas.map(function(r, i) {
+      var celdas = sec.cols.map(function(c) {
+        return '<td style="border:1px solid #d1d5db;padding:6px 10px;font-size:11pt;">' + esc(String(r[c]||'')) + '</td>';
+      }).join('');
+      return '<tr style="background:' + (i%2===0?'#ffffff':'#f9fafb') + '">' + celdas + '</tr>';
+    }).join('');
+
+    return '<h2 style="color:#1a7f4b;font-size:14pt;margin-top:28px;margin-bottom:6px;border-bottom:1px solid #d1fae5;padding-bottom:4px">&#128196; Hoja: ' + esc(sec.nombre) + '</h2>' +
+      '<p style="font-family:Calibri;font-size:10pt;color:#6b7280;margin-bottom:8px">Original: <strong>' + sec.orig + '</strong> &nbsp;&middot;&nbsp; Eliminados: <strong style="color:#dc2626">' + sec.elim + '</strong> &nbsp;&middot;&nbsp; Limpios: <strong style="color:#1a7f4b">' + sec.filas.length + '</strong></p>' +
+      '<table style="border-collapse:collapse;width:100%;margin-bottom:16px">' + cabecera + filasTR + '</table>';
+  }).join('');
+
+  var html = '<!DOCTYPE html><html><head><meta charset="UTF-8">' +
+    '<style>body{font-family:Calibri,sans-serif;margin:40px}h1{color:#1a7f4b;font-size:18pt}hr{border:none;border-top:2px solid #1a7f4b;margin:14px 0}</style>' +
+    '</head><body>' +
+    '<h1>&#10003; VerifiCheck &mdash; Libro Verificado</h1>' +
+    '<p style="color:#6b7280;font-size:10pt;margin-top:-6px">Generado el ' + fecha + '</p><hr>' +
+    '<table style="border-collapse:collapse;margin-bottom:16px;font-size:10pt">' +
+    '<tr><td style="padding:3px 20px 3px 0;color:#6b7280">Total hojas:</td><td style="font-weight:bold">' + secciones.length + ' hojas</td></tr>' +
+    '<tr><td style="padding:3px 20px 3px 0;color:#6b7280">Total original:</td><td style="font-weight:bold">' + totalOrig + ' registros</td></tr>' +
+    '<tr><td style="padding:3px 20px 3px 0;color:#6b7280">Total eliminados:</td><td style="font-weight:bold;color:#dc2626">' + totalElim + ' duplicados</td></tr>' +
+    '<tr><td style="padding:3px 20px 3px 0;color:#6b7280">Total limpio:</td><td style="font-weight:bold;color:#1a7f4b">' + totalLimpio + ' registros</td></tr>' +
+    '</table>' +
+    seccionesHTML +
+    '<p style="color:#9ca3af;font-size:9pt;margin-top:20px">Documento generado por VerifiCheck</p>' +
+    '</body></html>';
+
+  var blob = new Blob(['﻿' + html], { type: 'application/msword' });
+  var url = URL.createObjectURL(blob);
+  var a = document.createElement('a');
+  a.href = url;
+  a.download = (nombre || 'libro') + '.doc';
+  document.body.appendChild(a); a.click();
+  document.body.removeChild(a); URL.revokeObjectURL(url);
+
+  alerta('alr-excel', 'g',
+    '&#9989; <strong>' + secciones.length + ' hojas</strong> procesadas. ' +
+    'Se eliminaron <strong>' + totalElim + '</strong> duplicados. ' +
+    'Word descargado con <strong>' + totalLimpio + '</strong> registros limpios.'
+  );
+  estado('Word descargado · ' + totalLimpio + ' registros');
+}
+
+// ════════════════════════════════════════
+// LIMPIAR
+// ════════════════════════════════════════
+function limpiarTodo() {
+  datos = []; cols = []; procesado = []; wb = null;
+  G('res-panel').classList.remove('show');
+  G('colcfg').classList.remove('show');
+  G('sheet-sel').classList.remove('show');
+  G('sheet-btns').innerHTML = '';
+  G('btn-todas-wrap').style.display = 'none';
+  G('btn-ver').disabled = true;
+  alerta('alr-excel', '', '');
+  G('fi').value = '';
+  estado('Listo');
+}
+
+// ════════════════════════════════════════
+// SERVICE WORKER
+// ════════════════════════════════════════
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', function() {
+    navigator.serviceWorker.register('sw.js').catch(function() {});
+  });
+}
+</script>
+</body>
+</html>
